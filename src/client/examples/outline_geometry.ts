@@ -7,9 +7,12 @@ import {
     AmbientLight,
     AxesHelper,
     BoxGeometry,
+    BufferGeometry,
     Color,
     DirectionalLight,
     GridHelper,
+    Line,
+    LineBasicMaterial,
     Mesh,
     MeshPhysicalMaterial,
     PerspectiveCamera,
@@ -45,12 +48,12 @@ export const outlineGeometry = async (canvas: any) => {
     const axesHelper = new AxesHelper(2);
     scene.add(axesHelper);
 
-    const geometry = new BoxGeometry(1, 1, 1);
-    const material = new MeshPhysicalMaterial({color: 0xc0f0c0, transparent: true, opacity: 0.5});
-    const object = new Mesh(geometry, material);
+    const objectGeometry = new BoxGeometry(1, 1, 1);
+    const objectMaterial = new MeshPhysicalMaterial({color: 0xc0f0c0, transparent: true, opacity: 0.5});
+    const object = new Mesh(objectGeometry, objectMaterial);
     scene.add(object);
 
-    outlineFromMeshWASM(object, new Vector3(0, 0, -1), new Vector3(0, 1));
+    createOutline(scene, object, new Vector3(0, 0, -1), new Vector3(0, 1));
 
     const statistic = new Statistic();
     const dataGui = new DataGUI();
@@ -78,3 +81,25 @@ export const outlineGeometry = async (canvas: any) => {
     }
     animate(0);
 };
+
+let outlineMesh: Mesh | undefined = undefined;
+const createOutline = (scene: Scene, sourceMesh: Mesh, direction: Vector3, up: Vector3) => {
+    const outlineVertices = outlineFromMeshWASM(sourceMesh, new Vector3(0, 0, -1), new Vector3(0, 1));
+    console.log(outlineVertices);
+    const outlineMaterial = new LineBasicMaterial({ color: 0xff0000});
+    const outlinePoints = [];
+    if (outlineVertices && outlineVertices.length > 2) {
+        for (let i = 0; i < outlineVertices.length; i += 2) {
+            outlinePoints.push(new Vector3(outlineVertices[i], outlineVertices[i+1], 0));
+        }
+        outlinePoints.push(new Vector3(outlineVertices[0], outlineVertices[1], 0));
+    }
+    const outlineGeometry = new BufferGeometry().setFromPoints(outlinePoints);
+    if (outlineMesh) {
+        outlineMesh.geometry.dispose();
+        outlineMesh.geometry = outlineGeometry;
+    } else {
+        const outline = new Line(outlineGeometry, outlineMaterial);
+        scene.add(outline);
+    }
+}

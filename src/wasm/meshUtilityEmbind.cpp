@@ -273,11 +273,6 @@ namespace
         std::vector<uint32_t> indicesMesh0;
         copyBufferData(indicesMesh0, heapMemory, mesh0, "indices");
 
-        std::cout << "no of vertices: " << verticesMesh0.size() << std::endl;
-        std::cout << "no of indices: " << indicesMesh0.size() << std::endl;
-        std::cout << "direction: (" << direction.x << ", " << direction.y << ", " << direction.z << ")" << std::endl;
-        std::cout << "up: (" << up.x << ", " << up.y << ", " << up.z << ")" << std::endl;
-
         auto outlineConstructor = roomle::mesh::OutlineConstructor::fromSingleMesh(verticesMesh0, indicesMesh0);
         auto outline2d = outlineConstructor.create2dOutline({direction.x, direction.y, direction.z}, {up.x, up.y, up.z});
         return outline2d;

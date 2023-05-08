@@ -5,7 +5,7 @@ import {
     Vector3
 } from "three";
 
-export const outlineFromMeshWASM = (mesh0: Mesh, direction: Vector3, up: Vector3, epsilon = 0.0001) => {
+export const outlineFromMeshWASM = (mesh0: Mesh, direction: Vector3, up: Vector3, epsilon = 0.0001): Float32Array | null => {
 
     const meshData0 = {
         vertices: (mesh0.geometry.attributes.position as BufferAttribute).array,
@@ -15,10 +15,13 @@ export const outlineFromMeshWASM = (mesh0: Mesh, direction: Vector3, up: Vector3
     };
 
     const resultContour2d = calculateMeshOutline(meshData0, [direction.x, direction.y, direction.z], [up.x, up.y, up.z]);
-    const contour2d: number[] = [];
-    for (let i = 0; i < resultContour2d.size(); ++i) {
-        contour2d.push(resultContour2d.get(i));
+    const noOfPoints = resultContour2d.size() / 2;
+    if (noOfPoints === 0) {
+        return new Float32Array(0);
     }
-
-    console.log(contour2d);
+    const contour2d =  new Float32Array(resultContour2d.size());
+    for (let i = 0; i < resultContour2d.size(); ++i) {
+        contour2d[i] = resultContour2d.get(i);
+    }
+    return contour2d;
 }
