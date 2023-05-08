@@ -96,3 +96,19 @@ export const calculateMeshCSGAndAB = (mesh0: any, mesh1: any): any => {
     }
     return null;
 }
+
+export const createVector3f = (array: number[]): any => {
+    return { x: array[0], y: array[1], z: array[2] };
+}
+
+export const calculateMeshOutline = (mesh0: any, direction: number[], up: number[]): any => {
+    if (meshUtility === undefined) {
+        return null;
+    }
+    try {
+        return meshUtility.meshOutline(mesh0, createVector3f(direction), createVector3f(up));
+    } catch (error) {
+        console.error(error);
+    }
+    return null;
+}

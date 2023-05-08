@@ -4,7 +4,7 @@ import {
     calculateMeshCSGMinusAB,
     calculateMeshCSGOrAB,
     calculateMeshCSGAndAB
-} from './mesh_intersection'
+} from './mesh_utility'
 import { 
     Box3,
     BufferAttribute,

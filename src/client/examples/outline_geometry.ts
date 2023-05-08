@@ -1,6 +1,7 @@
 import { ElapsedTime } from '../utility/time_utility'
 import { Controls } from '../utility/controls'
-import { intiMeshUtility } from '../utility/mesh_intersection';
+import { intiMeshUtility } from '../utility/mesh_utility';
+import { outlineFromMeshWASM } from '../utility/outline_utility'
 import { DataGUI, Statistic } from '../utility/ui_utility' 
 import {
     AmbientLight,
@@ -13,6 +14,7 @@ import {
     MeshPhysicalMaterial,
     PerspectiveCamera,
     Scene,
+    Vector3,
     WebGLRenderer,
 } from 'three';
 
@@ -47,6 +49,8 @@ export const outlineGeometry = async (canvas: any) => {
     const material = new MeshPhysicalMaterial({color: 0xc0f0c0, transparent: true, opacity: 0.5});
     const object = new Mesh(geometry, material);
     scene.add(object);
+
+    outlineFromMeshWASM(object, new Vector3(0, 0, -1), new Vector3(0, 1));
 
     const statistic = new Statistic();
     const dataGui = new DataGUI();

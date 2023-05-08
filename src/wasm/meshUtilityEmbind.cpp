@@ -1,11 +1,13 @@
 #include "mesh_utility/constructiveSolidGeometry.h"
 #include "mesh_utility/meshIntersection.h"
+#include "mesh_utility/outlineConstruction.h"
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 emscripten::val globalIOContext = emscripten::val::null();
 
@@ -45,6 +47,12 @@ namespace
         }
         return p;
     }
+
+    struct Vector3f {
+        float x;
+        float y;
+        float z;
+    };
 
     /*
     void coutMeshData(const mesh::MeshDataReference &MeshDataReference) {
@@ -252,12 +260,40 @@ namespace
     roomle::mesh::MeshDataInstance meshCSGAndAB(emscripten::val mesh0, emscripten::val mesh1) {
         return meshCSG(mesh0, mesh1, roomle::mesh::Operator::AND);
     }
+
+    std::vector<float> meshOutline(emscripten::val mesh0, Vector3f direction, Vector3f up) {
+
+        emscripten::val heapMemory = emscripten::val::module_property("HEAPU8")["buffer"];
+        if (heapMemory.isUndefined()) {
+            return {};
+        }
+
+        std::vector<float> verticesMesh0;
+        copyBufferData(verticesMesh0, heapMemory, mesh0, "vertices");
+        std::vector<uint32_t> indicesMesh0;
+        copyBufferData(indicesMesh0, heapMemory, mesh0, "indices");
+
+        std::cout << "no of vertices: " << verticesMesh0.size() << std::endl;
+        std::cout << "no of indices: " << indicesMesh0.size() << std::endl;
+        std::cout << "direction: (" << direction.x << ", " << direction.y << ", " << direction.z << ")" << std::endl;
+        std::cout << "up: (" << up.x << ", " << up.y << ", " << up.z << ")" << std::endl;
+
+        auto outlineConstructor = roomle::mesh::OutlineConstructor::fromSingleMesh(verticesMesh0, indicesMesh0);
+        auto outline2d = outlineConstructor.create2dOutline({direction.x, direction.y, direction.z}, {up.x, up.y, up.z});
+        return outline2d;
+    }
 }
 
 EMSCRIPTEN_BINDINGS(my_module)
 {
     emscripten::register_vector<uint32_t>("Uint32Array");
     emscripten::register_vector<float>("Float32Array");
+
+    emscripten::value_object<Vector3f>("Vector3f")
+        .field<Vector3f, float>("x", &Vector3f::x)
+        .field<Vector3f, float>("y", &Vector3f::y)
+        .field<Vector3f, float>("z", &Vector3f::z)
+        ;
 
     emscripten::value_object<roomle::mesh::MeshDataInstance>("MeshDataInstance")
         .field<roomle::mesh::MeshDataInstance, std::vector<float>>("vertices", &roomle::mesh::MeshDataInstance::vertices)
@@ -276,4 +312,5 @@ EMSCRIPTEN_BINDINGS(my_module)
     emscripten::function<roomle::mesh::MeshDataInstance, emscripten::val, emscripten::val>("meshCSGMinusAB", &meshCSGMinusAB);
     emscripten::function<roomle::mesh::MeshDataInstance, emscripten::val, emscripten::val>("meshCSGOrAB", &meshCSGOrAB);
     emscripten::function<roomle::mesh::MeshDataInstance, emscripten::val, emscripten::val>("meshCSGAndAB", &meshCSGAndAB);
+    emscripten::function<std::vector<float>, emscripten::val, Vector3f, Vector3f>("meshOutline", &meshOutline);
 }

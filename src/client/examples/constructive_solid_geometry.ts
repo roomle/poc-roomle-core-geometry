@@ -9,12 +9,12 @@ import {
     MESH_MINUS_AB,
     MESH_OR_AB,
     MESH_AND_AB
-} from '../utility/math_utility'
+} from '../utility/intersection_utility'
 import { 
     createBufferGeometry,
     createEquilateralTriangleGeometry
 } from '../utility/three_geometry'
-import { intiMeshUtility } from '../utility/mesh_intersection';
+import { intiMeshUtility } from '../utility/mesh_utility';
 import { DataGUI, Statistic } from '../utility/ui_utility' 
 import {
     AmbientLight,
