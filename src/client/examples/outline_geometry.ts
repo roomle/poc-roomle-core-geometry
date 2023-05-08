@@ -53,8 +53,6 @@ export const outlineGeometry = async (canvas: any) => {
     const object = new Mesh(objectGeometry, objectMaterial);
     scene.add(object);
 
-    createOutline(scene, object, new Vector3(0, 0, -1), new Vector3(0, 1));
-
     const statistic = new Statistic();
     const dataGui = new DataGUI();
 
@@ -67,13 +65,21 @@ export const outlineGeometry = async (canvas: any) => {
     };
     window.addEventListener('resize', onWindowResize, false);
     
+    let worldDirection = new Vector3();
     const elapsedTime = new ElapsedTime();
     const animate = (timestamp: number) => {
         elapsedTime.update(timestamp);
-        requestAnimationFrame(animate);
         controls.update();
+        camera.updateMatrixWorld();
+        const newWorldDirection = camera.getWorldDirection(new Vector3());
+        if (worldDirection.distanceTo(newWorldDirection) > 0.001) {
+            worldDirection = newWorldDirection;
+            console.log(worldDirection);
+            createOutline(scene, object, worldDirection, new Vector3(0, 1, 0));
+        }
         render();
         statistic.update();
+        requestAnimationFrame(animate);
     }
 
     const render = () => {
@@ -82,9 +88,9 @@ export const outlineGeometry = async (canvas: any) => {
     animate(0);
 };
 
-let outlineMesh: Mesh | undefined = undefined;
+let outlineMesh: Line | undefined = undefined;
 const createOutline = (scene: Scene, sourceMesh: Mesh, direction: Vector3, up: Vector3) => {
-    const outlineVertices = outlineFromMeshWASM(sourceMesh, new Vector3(0, 0, -1), new Vector3(0, 1));
+    const outlineVertices = outlineFromMeshWASM(sourceMesh, direction, up);
     console.log(outlineVertices);
     const outlineMaterial = new LineBasicMaterial({ color: 0xff0000});
     const outlinePoints = [];
@@ -99,7 +105,7 @@ const createOutline = (scene: Scene, sourceMesh: Mesh, direction: Vector3, up: V
         outlineMesh.geometry.dispose();
         outlineMesh.geometry = outlineGeometry;
     } else {
-        const outline = new Line(outlineGeometry, outlineMaterial);
-        scene.add(outline);
+        outlineMesh = new Line(outlineGeometry, outlineMaterial);
+        scene.add(outlineMesh);
     }
 }
