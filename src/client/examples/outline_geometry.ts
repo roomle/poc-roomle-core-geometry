@@ -9,16 +9,25 @@ import {
     BoxGeometry,
     BufferGeometry,
     Color,
+    Curve,
     DirectionalLight,
+    DoubleSide,
     GridHelper,
+    Group,
     Line,
     LineBasicMaterial,
+    LineSegments,
+    Material,
     Mesh,
     MeshPhysicalMaterial,
-    PerspectiveCamera,
+    Object3D,
+    OrthographicCamera,
     Scene,
+    SphereGeometry,
+    TubeGeometry,
     Vector3,
     WebGLRenderer,
+    WireframeGeometry,
 } from 'three';
 
 
@@ -29,9 +38,12 @@ export const outlineGeometry = async (canvas: any) => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     
-    const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.y = 1.5;
-    camera.position.z = 3;
+    const volumeSize = 5;
+    const aspect = window.innerWidth / window.innerHeight;
+    const camera = new OrthographicCamera(-volumeSize, volumeSize, volumeSize, -volumeSize, -volumeSize, volumeSize);
+    camera.position.x = 0;
+    camera.position.y = 0;
+    camera.position.z = -0.3;
     const controls = new Controls(renderer, camera);
 
     const scene = new Scene();
@@ -48,10 +60,11 @@ export const outlineGeometry = async (canvas: any) => {
     const axesHelper = new AxesHelper(2);
     scene.add(axesHelper);
 
-    const objectGeometry = new BoxGeometry(1, 1, 1);
+    //const objectGeometry = new BoxGeometry(1, 1, 1);
+    const objectGeometry = new SphereGeometry(1, 8, 4);
+    //const objectGeometry = debugTubeGeometry();
     const objectMaterial = new MeshPhysicalMaterial({color: 0xc0f0c0, transparent: true, opacity: 0.5});
-    const object = new Mesh(objectGeometry, objectMaterial);
-    scene.add(object);
+    const object = addGeometry(scene, objectGeometry, objectMaterial);
 
     const statistic = new Statistic();
     const dataGui = new DataGUI();
@@ -59,7 +72,9 @@ export const outlineGeometry = async (canvas: any) => {
     const onWindowResize = () => {
         const width = window.innerWidth;
         const height = window.innerHeight;
-        camera.aspect = width / height;
+        const aspect = width / height;
+        camera.left = -volumeSize * aspect;
+        camera.right = volumeSize * aspect;
         camera.updateProjectionMatrix();
         renderer.setSize(width, height);
     };
@@ -71,11 +86,12 @@ export const outlineGeometry = async (canvas: any) => {
         elapsedTime.update(timestamp);
         controls.update();
         camera.updateMatrixWorld();
-        const newWorldDirection = camera.getWorldDirection(new Vector3());
+        const newWorldDirection = camera.getWorldDirection(new Vector3()).clone();
         if (worldDirection.distanceTo(newWorldDirection) > 0.001) {
             worldDirection = newWorldDirection;
             console.log(worldDirection);
-            createOutline(scene, object, worldDirection, new Vector3(0, 1, 0));
+            const outline = createOutline(scene, object, worldDirection, new Vector3(0, 1, 0));
+            outline.rotation.copy(camera.rotation);
         }
         render();
         statistic.update();
@@ -88,11 +104,41 @@ export const outlineGeometry = async (canvas: any) => {
     animate(0);
 };
 
+const debugTubeGeometry = (): BufferGeometry => {
+    class CustomSinCurve extends Curve<Vector3> {
+        private scale: number;
+        constructor(scale = 1 ) {
+            super();
+            this.scale = scale;
+        }
+        getPoint(t: number, optionalTarget = new Vector3() ) {
+            const tx = t * 3 - 1.5;
+            const ty = Math.sin( 2 * Math.PI * t );
+            const tz = 0;
+            return optionalTarget.set( tx, ty, tz ).multiplyScalar( this.scale );
+        }
+    }
+    const path = new CustomSinCurve(1);
+    const objectGeometry = new TubeGeometry(path, 10, 0.5, 8, false);
+    return objectGeometry;
+}
+
+const addGeometry = (target: Object3D, geometry: BufferGeometry, material: Material): Mesh => {
+    const mesh = new Mesh(geometry, material);
+    const lineMaterial = new LineBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.5});
+    const lineSegments = new LineSegments(new WireframeGeometry(geometry), lineMaterial);
+    const group = new Group();
+    group.add(mesh);
+    group.add(lineSegments);
+    target.add(group);
+    return mesh;
+}
+
 let outlineMesh: Line | undefined = undefined;
-const createOutline = (scene: Scene, sourceMesh: Mesh, direction: Vector3, up: Vector3) => {
+const createOutline = (scene: Scene, sourceMesh: Mesh, direction: Vector3, up: Vector3) : Line => {
     const outlineVertices = outlineFromMeshWASM(sourceMesh, direction, up);
     console.log(outlineVertices);
-    const outlineMaterial = new LineBasicMaterial({ color: 0xff0000});
+    const outlineMaterial = new LineBasicMaterial({ color: 0xff0000, side: DoubleSide});
     const outlinePoints = [];
     if (outlineVertices && outlineVertices.length > 2) {
         for (let i = 0; i < outlineVertices.length; i += 2) {
@@ -108,4 +154,5 @@ const createOutline = (scene: Scene, sourceMesh: Mesh, direction: Vector3, up: V
         outlineMesh = new Line(outlineGeometry, outlineMaterial);
         scene.add(outlineMesh);
     }
+    return outlineMesh;
 }

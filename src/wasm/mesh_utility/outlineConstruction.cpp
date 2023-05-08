@@ -11,10 +11,18 @@ OutlineConstructor OutlineConstructor::fromSingleMesh(
         const Indices &triangleIndices,
         float epsilon) {
     UniqueIndices uniqueIndices;
-    auto indexMap = uniqueIndices.createUniqueIndices(vertices3d.data(), vertices3d.size() / 3, epsilon);
+    Indices provokingTriangleIndexMap(vertices3d.size() / 3, 0);
+    Indices uniqueIndexMap;
+    for (uint32_t i = 0; i < vertices3d.size() / 3; ++i) {
+        auto nextIndex = uniqueIndices.getNextIndex();
+        auto uniqueIndex = uniqueIndices.getVertexIndex(vertices3d.data() + i * 3, epsilon);
+        if (uniqueIndex == nextIndex)
+            uniqueIndexMap.push_back(i);
+        provokingTriangleIndexMap[i] = uniqueIndexMap[uniqueIndex];
+    };
     Indices provokingTriangleIndices(triangleIndices.size(), 0);
-    std::transform(triangleIndices.begin(), triangleIndices.end(), provokingTriangleIndices.begin(), [&indexMap](uint32_t index) {
-        return indexMap[index];
+    std::transform(triangleIndices.begin(), triangleIndices.end(), provokingTriangleIndices.begin(), [&provokingTriangleIndexMap](uint32_t index) {
+        return provokingTriangleIndexMap[index];
     });
     return {vertices3d, provokingTriangleIndices, epsilon};
 }
@@ -38,9 +46,9 @@ std::vector<float> OutlineConstructor::create2dOutline(
 std::vector<float> OutlineConstructor::projectVerticesToPlane(
         const Vector3 &planeNormal,
         const Vector3 &planeUp) const {
-    auto zAxis = normalize3(planeNormal);
+    auto zAxis = normalize3(multiply3scalar(planeNormal, -1));
     auto yAxis = normalize3(planeUp);
-    auto xAxis = cross3(yAxis, zAxis);
+    auto xAxis = normalize3(cross3(yAxis, zAxis));
     yAxis = cross3(zAxis, xAxis);
 
     Vertices projectedVertices;
@@ -150,8 +158,8 @@ OutlineConstructor::Vertices OutlineConstructor::createOutlineFromLineSegments(
         const LineSegments &lineSegments) {
     auto graph = createLineSegmentsGraph(vertices2d, lineSegments);
     uint32_t startIndex = 0;
-    for (size_t i = 0; i < vertices2d.size(); i += 2) {
-        if (vertices2d[i] < vertices2d[startIndex])
+    for (size_t i = 0; i < vertices2d.size() / 2; ++i) {
+        if (vertices2d[i*2] < vertices2d[startIndex*2])
             startIndex = i;
     }
     Vector2 direction = {0, -1};
@@ -164,10 +172,9 @@ OutlineConstructor::Vertices OutlineConstructor::createOutlineFromLineSegments(
         auto &neighbors = it->second;
         if (neighbors.empty())
             break;
-        if (neighbors.size() == 1) {
-            currentIndex = neighbors.begin()->first;
-        } else {
-            auto mostRight = std::min_element(neighbors.begin(), neighbors.end(), [&outlineIndices, &direction](auto &a, auto &b) {
+        auto mostRightIt = neighbors.begin();
+        if (neighbors.size() > 1) {
+            mostRightIt = std::min_element(neighbors.begin(), neighbors.end(), [&outlineIndices, &direction](auto &a, auto &b) {
                 if (outlineIndices.size() > 1) {
                     if (a.first == outlineIndices[outlineIndices.size() - 2])
                         return false;
@@ -176,8 +183,9 @@ OutlineConstructor::Vertices OutlineConstructor::createOutlineFromLineSegments(
                 }
                 return directionSortKey(direction, a.second) < directionSortKey(direction, b.second);
             });
-            currentIndex = mostRight->first;
         }
+        currentIndex = mostRightIt->first;
+        direction = mostRightIt->second;
         if (std::find(outlineIndices.begin(), outlineIndices.end(), currentIndex) != outlineIndices.end())
             break;
         outlineIndices.push_back(currentIndex);
@@ -200,7 +208,7 @@ OutlineConstructor::LineGraph OutlineConstructor::createLineSegmentsGraph(
         auto v1 = vertices2d.data() + lineSegment.second * 2;
         auto d = normalize2(sub2(v1, v0));
         graph[lineSegment.first][lineSegment.second] = Vector2{d[0], d[1]};
-        graph[lineSegment.second][lineSegment.first] = Vector2{d[1], d[2]};
+        graph[lineSegment.second][lineSegment.first] = Vector2{-d[0], -d[1]};
     }
     return graph;
 }
