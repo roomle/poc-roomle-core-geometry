@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
-
 project(wasm)
 set(CMAKE_CXX_STANDARD 20)
 
@@ -44,20 +42,34 @@ else(DEBUG)
     )
 endif()
 
+include_directories (
+    "./"
+    )
+
+set(
+    WASM_SOURCE
+    mesh_utility/constructiveSolidGeometry.cpp
+    mesh_utility/meshMath.cpp
+    mesh_utility/meshIntersection.cpp
+    mesh_utility/meshSpecification.cpp
+    mesh_utility/outlineConstruction.cpp
+    meshUtilityEmbind.cpp
+    )
+
 add_compile_definitions(USE_MAKE_SHARED_BYPASS)
 
 add_executable(
-    MeshGenerator
-    emscriptenBindings.cpp
+    MeshUtility
+    ${WASM_SOURCE}
     )
-target_compile_options(MeshGenerator PRIVATE
+target_compile_options(MeshUtility PRIVATE
     ${EMSCRIPTEN_OPTIONS}
     "SHELL:-s WASM=1"
     )
-target_link_options(MeshGenerator PRIVATE 
+target_link_options(MeshUtility PRIVATE 
     ${EMSCRIPTEN_OPTIONS}
     "SHELL:-s WASM=1" 
-    "SHELL:-s EXPORT_NAME=\"'MeshGenerator'\""
+    "SHELL:-s EXPORT_NAME=\"'MeshUtility'\""
     "SHELL:-s ENVIRONMENT=web"
     #"-lnodefs.js"
     )
@@ -68,8 +80,10 @@ set(EMSCRIPTEN_ASMJS_OPTIONS
     "SHELL:--memory-init-file 1"
     )
 add_executable(
-    MeshGeneratorJs
-    emscriptenBindings.cpp
+    MeshUtilityJs
+    ${WASM_SOURCE}
     )
-target_compile_options(MeshGeneratorJs PRIVATE ${EMSCRIPTEN_ASMJS_OPTIONS})
-target_link_options(MeshGeneratorJs PRIVATE ${EMSCRIPTEN_ASMJS_OPTIONS} "SHELL:-s EXPORT_NAME=\"'MeshGenerator'\"")
+target_compile_options(MeshUtilityJs PRIVATE ${EMSCRIPTEN_ASMJS_OPTIONS})
+target_link_options(MeshUtilityJs PRIVATE ${EMSCRIPTEN_ASMJS_OPTIONS} "SHELL:-s EXPORT_NAME=\"'MeshUtility'\"")
+
+add_subdirectory(test)
