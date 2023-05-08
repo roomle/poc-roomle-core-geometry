@@ -1,4 +1,5 @@
-import { constructiveSolidGeometry } from './examples/constructiveSolidGeometry'
+import { constructiveSolidGeometry } from './examples/constructive_solid_geometry'
+import { outlineGeometry } from './examples/outline_geometry'
 
 // @ts-ignore
 const canvas: any = three_canvas
@@ -14,4 +15,5 @@ if (exampleAttribute) {
 switch(example) {
     default:
     case 'csg_example': constructiveSolidGeometry(canvas); break;
+    case 'outline_geometry_example': outlineGeometry(canvas); break;
 }
