@@ -1,3 +1,7 @@
-# node-ts-three-js--hello-cube
+# PoC Rommle geometry
 
-Node.js, TypeScript, Three.js Boilerplate
+Node.js, TypeScript, Three.js, WASM
+
+## Examples
+
+- Constructive Solid Geometry (CSG)
