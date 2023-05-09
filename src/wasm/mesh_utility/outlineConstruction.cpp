@@ -39,6 +39,7 @@ std::vector<float> OutlineConstructor::create2dOutline(
     auto normals = calculateTriangleNormalVectors(projected3dVertices, uniqueTriangleIndices);
     auto outlineCandidates = identifyOutlineCandidates(uniqueTriangleIndices, normals);
     auto [vertices2d, uniqueLineSegments] = createUnique2dSegments(projected3dVertices, outlineCandidates);
+    intersect2dLineSegments(vertices2d, uniqueLineSegments);
     Vertices outline2d = createOutlineFromLineSegments(vertices2d, uniqueLineSegments);
     return outline2d;
 }
@@ -153,6 +154,23 @@ std::tuple<OutlineConstructor::Vertices, OutlineConstructor::LineSegments> Outli
     return {vertices2d, uniqueSegments};
 }
 
+void OutlineConstructor::intersect2dLineSegments(Vertices &vertices2d, LineSegments &lineSegments) const {
+    for (uint32_t segmentIndex = 0; segmentIndex < lineSegments.size(); ++segmentIndex) {
+        auto &segment = lineSegments[segmentIndex];
+        for (uint32_t vertexIndex = 0; vertexIndex < vertices2d.size() / 2; ++vertexIndex) {
+            auto vertex = vertices2d.data() + vertexIndex * 2;
+            if (vertexIndex == segment.first || vertexIndex == segment.second)
+                continue;
+            auto segmentStart = vertices2d.data() + segment.first * 2;
+            auto segmentEnd = vertices2d.data() + segment.second * 2;
+            if (isPointOnLineSegment2D(vertex, segmentStart, segmentEnd, epsilon)) {
+                lineSegments.emplace_back(vertexIndex, segment.second);
+                segment.second = vertexIndex;
+            }
+        }
+    }
+}
+
 OutlineConstructor::Vertices OutlineConstructor::createOutlineFromLineSegments(
         const Vertices &vertices2d,
         const LineSegments &lineSegments) {
@@ -217,4 +235,17 @@ float OutlineConstructor::directionSortKey(const Vector2 &direction, const Vecto
     auto dotD = dot2(direction, v);
     auto dotN = dot2(direction, Vector2{-v[1], v[0]});
     return dotN > 0 ? 1 - dotD : dotD - 1;
+}
+
+bool OutlineConstructor::isPointOnLineSegment2D(const float p[], const float a[], const float b[], float epsilon) {
+    auto ab = sub2(b, a);
+    auto ap = sub2(p, a);
+    auto bp = sub2(p, b);
+    auto abAp = dot2(ab, ap);
+    auto abBp = dot2(ab, bp);
+    if (abAp <= 0 || abBp >= 0)
+        return false;
+    auto nv = normalize2(Coordinates2{-ab[1], ab[0]});
+    auto nvAp = dot2(nv, ap);
+    return std::fabs(nvAp) < epsilon;
 }

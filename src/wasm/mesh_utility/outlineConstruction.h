@@ -34,9 +34,11 @@ namespace roomle::mesh {
         static Normals calculateTriangleNormalVectors(const Vertices &vertices, const Indices &triangleIndices);
         static LineSegments identifyOutlineCandidates(const Indices &triangleIndices, const Normals &normals);
         [[nodiscard]] std::tuple<Vertices, LineSegments> createUnique2dSegments(const Vertices &projectedVertices, const LineSegments &outlineCandidates) const;
+        void intersect2dLineSegments(Vertices &vertices2d, LineSegments &lineSegments) const;
         static Vertices createOutlineFromLineSegments(const Vertices &vertices2d, const LineSegments &lineSegments);
         static LineGraph createLineSegmentsGraph(const Vertices &vertices2d, const LineSegments &lineSegments);
         static float directionSortKey(const Vector2 &direction, const Vector2 &v);
+        static bool isPointOnLineSegment2D(const float p[], const float a[], const float b[], float epsilon);
     };
 }
 

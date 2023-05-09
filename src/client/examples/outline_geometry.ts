@@ -40,7 +40,7 @@ export const outlineGeometry = async (canvas: any) => {
     
     const volumeSize = 5;
     const aspect = window.innerWidth / window.innerHeight;
-    const camera = new OrthographicCamera(-volumeSize, volumeSize, volumeSize, -volumeSize, -volumeSize, volumeSize);
+    const camera = new OrthographicCamera(-volumeSize * aspect, volumeSize * aspect, volumeSize, -volumeSize, -volumeSize, volumeSize);
     camera.position.x = 0;
     camera.position.y = 0;
     camera.position.z = -0.3;
@@ -61,8 +61,8 @@ export const outlineGeometry = async (canvas: any) => {
     scene.add(axesHelper);
 
     //const objectGeometry = new BoxGeometry(1, 1, 1);
-    const objectGeometry = new SphereGeometry(1, 8, 4);
-    //const objectGeometry = debugTubeGeometry();
+    //const objectGeometry = new SphereGeometry(1, 8, 4);
+    const objectGeometry = debugTubeGeometry();
     const objectMaterial = new MeshPhysicalMaterial({color: 0xc0f0c0, transparent: true, opacity: 0.5});
     const object = addGeometry(scene, objectGeometry, objectMaterial);
 
