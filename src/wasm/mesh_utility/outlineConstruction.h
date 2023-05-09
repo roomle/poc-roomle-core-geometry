@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <tuple>
 #include <map>
+#include <optional>
 #include <set>
 #include <vector>
 
@@ -39,6 +40,7 @@ namespace roomle::mesh {
         static LineGraph createLineSegmentsGraph(const Vertices &vertices2d, const LineSegments &lineSegments);
         static float directionSortKey(const Vector2 &direction, const Vector2 &v);
         static bool isPointOnLineSegment2D(const float p[], const float a[], const float b[], float epsilon);
+        static std::optional<Vector2> findIntersection(const float a0[], const float a1[], const float b0[], const float b1[], float epsilon);
     };
 }
 

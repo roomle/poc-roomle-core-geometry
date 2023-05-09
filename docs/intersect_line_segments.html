@@ -1,0 +1,77 @@
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <title>processing p5.js example</title>
+    <style>
+        html,body { margin: 0; overflow: hidden; background-color: dimgray; }
+    </style>
+</head>
+
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
+<script>
+let points = [];
+let index = 0;
+
+function setup() {
+    createCanvas(500, 500);
+    for (let i = 0; i < 4; i++) {
+        points.push(createVector(random(width), random(height)));
+    }
+}
+
+function draw() {
+    points[index].x = mouseX;
+    points[index].y = mouseY;
+    background(255);
+    strokeWeight(4);
+    stroke(0);
+    line(points[0].x, points[0].y, points[1].x, points[1].y);
+    line(points[2].x, points[2].y, points[3].x, points[3].y);
+    strokeWeight(2);
+    for (let i = 0; i < points.length; i++) {
+        if (i == index) {
+            fill(128, 255, 128);
+            stroke(0, 128, 0);
+        } else {
+            fill(255, 128, 128);
+            stroke(128, 0, 0);
+        }
+        ellipse(points[i].x, points[i].y, 8, 8);
+    }
+    let x = findIntersection(points[0], points[1], points[2], points[3], 0.0001);
+    if (x) {
+        fill(255, 255, 0);
+        stroke(128, 128, 0);
+        ellipse(x.x, x.y, 12, 12);
+    }
+}
+
+function mousePressed() {
+    index = (index + 1) % points.length;
+}
+
+function findIntersection(a0, a1, b0, b1, epsilon) {
+    const add2 = p5.Vector.add;
+    const sub2 = p5.Vector.sub;
+    const dot2 = p5.Vector.dot;
+    const multiply2scalar = p5.Vector.mult;
+    const p = createVector(a0.x, a0.y);
+    const r = sub2(a1, a0);
+    const q = createVector(b0.x, b0.y);
+    const s = sub2(b1, b0);
+    const sn = createVector(s.y, -s.x);
+    if (abs(dot2(r, sn)) < epsilon)
+        return null;
+    const t = dot2(sub2(q, p), sn) / dot2(r, sn);
+    const u = dot2(sub2(q, p), createVector(r.y, -r.x)) / dot2(r, sn);
+    if (t <= 0 || t >= 1 || u <= 0 || u >= 1)
+        return null;
+    const x = add2(p, multiply2scalar(r, t));
+    return x;
+}
+
+</script>
+</body>
+
+</html>

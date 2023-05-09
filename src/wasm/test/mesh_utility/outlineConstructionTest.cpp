@@ -9,6 +9,18 @@ TEST_CASE("2d outline construction") {
     std::vector<uint32_t> triangleIndices;
     roomle::mesh::Vector3 planeNormal, planeUp;
     std::vector<float> expectedOutline;
+    SECTION("triangles") {
+        vertices3d = {
+                -1, -1, 0, 1, -1, 0, 0, 1, 0,
+                -1, 1, 0, 0, -1, 0, 1, 1, 0,
+        };
+        triangleIndices = {
+                0, 1, 2, 3, 4, 5,
+        };
+        planeNormal = {0, 0, -1};
+        planeUp = {0, 1, 0};
+        expectedOutline = {-1, -1, -0.5, 0, -1, 1, 0, 1, 1, 1, 0.5, 0, 1, -1, 0, -1, };
+    }
     SECTION("cube") {
         vertices3d = {
                 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5,
@@ -32,10 +44,15 @@ TEST_CASE("2d outline construction") {
             planeUp = {0, 1, 0};
             expectedOutline = {-0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, };
         }
-        SECTION("diagonal xy") {
+        SECTION("diagonal xy edge") {
             planeNormal = {1, 0, -1};
             planeUp = {0, 1, 0};
             expectedOutline = {-0.707107, 0.5, 0, 0.5, 0.707107, 0.5, 0.707107, -0.5, 0, -0.5, -0.707107, -0.5, };
+        }
+        SECTION("diagonal xy") {
+            planeNormal = {-1, 0, 0.5};
+            planeUp = {0, 1, 0};
+            expectedOutline = {-0.67082, 0.5, -0.223607, 0.5, 0.223607, 0.5, 0.67082, 0.5, 0.67082, -0.5, 0.223607, -0.5, -0.223607, -0.5, -0.67082, -0.5, };
         }
         SECTION("diagonal to corner") {
             planeNormal = {1, 1, 1};
@@ -82,7 +99,7 @@ TEST_CASE("2d outline construction") {
     const float epsilon = 0.0001f;
     auto constructor = roomle::mesh::OutlineConstructor::fromSingleMesh(vertices3d, triangleIndices, epsilon);
     auto actualOutline = constructor.create2dOutline(planeNormal, planeUp);
-//#define OUTLINE_DEBUG_OUTPUT
+#define OUTLINE_DEBUG_OUTPUT
 #ifdef OUTLINE_DEBUG_OUTPUT
     std::cout << "(" << actualOutline.size() << ") {";
     for (auto i: actualOutline)

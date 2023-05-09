@@ -156,17 +156,40 @@ std::tuple<OutlineConstructor::Vertices, OutlineConstructor::LineSegments> Outli
 
 void OutlineConstructor::intersect2dLineSegments(Vertices &vertices2d, LineSegments &lineSegments) const {
     for (uint32_t segmentIndex = 0; segmentIndex < lineSegments.size(); ++segmentIndex) {
-        auto &segment = lineSegments[segmentIndex];
         for (uint32_t vertexIndex = 0; vertexIndex < vertices2d.size() / 2; ++vertexIndex) {
             auto vertex = vertices2d.data() + vertexIndex * 2;
-            if (vertexIndex == segment.first || vertexIndex == segment.second)
+            if (vertexIndex == lineSegments[segmentIndex].first || vertexIndex == lineSegments[segmentIndex].second)
                 continue;
-            auto segmentStart = vertices2d.data() + segment.first * 2;
-            auto segmentEnd = vertices2d.data() + segment.second * 2;
+            auto segmentStart = vertices2d.data() + lineSegments[segmentIndex].first * 2;
+            auto segmentEnd = vertices2d.data() + lineSegments[segmentIndex].second * 2;
             if (isPointOnLineSegment2D(vertex, segmentStart, segmentEnd, epsilon)) {
-                lineSegments.emplace_back(vertexIndex, segment.second);
-                segment.second = vertexIndex;
+                lineSegments.emplace_back(vertexIndex, lineSegments[segmentIndex].second);
+                lineSegments[segmentIndex].second = vertexIndex;
             }
+        }
+    }
+    for (uint32_t segmentIndexA = 0; segmentIndexA < lineSegments.size(); ++segmentIndexA) {
+        for (uint32_t segmentIndexB = segmentIndexA+1; segmentIndexB < lineSegments.size(); ++segmentIndexB) {
+            auto startA = lineSegments[segmentIndexA].first;
+            auto endA = lineSegments[segmentIndexA].second;
+            auto startB = lineSegments[segmentIndexB].first;
+            auto endB = lineSegments[segmentIndexB].second;
+            if (startA == startB || startA == endB || endA == startB || endA == endB)
+                continue;
+            auto segmentAStart = vertices2d.data() + startA * 2;
+            auto segmentAEnd = vertices2d.data() + endA * 2;
+            auto segmentBStart = vertices2d.data() + startB * 2;
+            auto segmentBEnd = vertices2d.data() + endB * 2;
+            auto intersection = findIntersection(segmentAStart, segmentAEnd, segmentBStart, segmentBEnd, epsilon);
+            if (!intersection)
+                continue;
+            auto intersectionIndex = vertices2d.size() / 2;
+            vertices2d.push_back((*intersection)[0]);
+            vertices2d.push_back((*intersection)[1]);
+            lineSegments.emplace_back(endA, intersectionIndex);
+            lineSegments[segmentIndexA].second = intersectionIndex;
+            lineSegments.emplace_back(endB, intersectionIndex);
+            lineSegments[segmentIndexB].second = intersectionIndex;
         }
     }
 }
@@ -248,4 +271,20 @@ bool OutlineConstructor::isPointOnLineSegment2D(const float p[], const float a[]
     auto nv = normalize2(Coordinates2{-ab[1], ab[0]});
     auto nvAp = dot2(nv, ap);
     return std::fabs(nvAp) < epsilon;
+}
+
+std::optional<Vector2> OutlineConstructor::findIntersection(const float a0[], const float a1[], const float b0[], const float b1[], float epsilon) {
+    auto p = Coordinates2{a0[0], a0[1]};
+    auto r = sub2(a1, a0);
+    auto q = Coordinates2{b0[0], b0[1]};
+    auto s = sub2(b1, b0);
+    auto sn = Coordinates2{s[1], -s[0]};
+    if (std::fabs(dot2(r, sn)) < epsilon)
+        return std::nullopt;
+    auto t = dot2(sub2(q, p), sn) / dot2(r, sn);
+    auto u = dot2(sub2(q, p), Coordinates2{r[1], -r[0]}) / dot2(r, sn);
+    if (t <= 0 || t >= 1 || u <= 0 || u >= 1)
+        return std::nullopt;
+    auto x = add2(p, multiply2scalar(r, t));
+    return x;
 }
