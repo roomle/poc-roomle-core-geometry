@@ -13,9 +13,8 @@ export const outlineFromMeshWASM = (mesh0: Mesh, direction: Vector3, up: Vector3
         uvs: (mesh0.geometry.attributes.uv as BufferAttribute)?.array,
         indices: new Uint32Array(mesh0.geometry.index?.array ?? [])
     };
-    console.log(meshData0.vertices);
-    consoleLogFloatArray(meshData0.vertices);
-    consoleLogFloatArray(meshData0.indices);
+    //consoleLogFloatArray(meshData0.vertices);
+    //consoleLogFloatArray(meshData0.indices);
 
     const resultContour2d = calculateMeshOutline(meshData0, [direction.x, direction.y, direction.z], [up.x, up.y, up.z]);
     if (!resultContour2d || resultContour2d.size() === 0) {
