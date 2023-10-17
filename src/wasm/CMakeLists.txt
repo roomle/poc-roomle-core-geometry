@@ -19,7 +19,6 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
 endif()
 
 set(EMSCRIPTEN_OPTIONS
-    "SHELL:-s DISABLE_EXCEPTION_CATCHING=0"
     "SHELL:-s FILESYSTEM=0"
     "SHELL:-s MODULARIZE=1"
     "-lembind"
@@ -65,17 +64,20 @@ add_executable(
 target_compile_options(MeshUtility PRIVATE
     ${EMSCRIPTEN_OPTIONS}
     "SHELL:-s WASM=1"
+    "-fwasm-exceptions"
     )
 target_link_options(MeshUtility PRIVATE 
     ${EMSCRIPTEN_OPTIONS}
     "SHELL:-s WASM=1" 
     "SHELL:-s EXPORT_NAME=\"'MeshUtility'\""
     "SHELL:-s ENVIRONMENT=web"
+    "-fwasm-exceptions"
     #"-lnodefs.js"
     )
 
 set(EMSCRIPTEN_ASMJS_OPTIONS
     ${EMSCRIPTEN_OPTIONS}
+    "SHELL:-s DISABLE_EXCEPTION_CATCHING=0"
     "SHELL:-s WASM=0"
     "SHELL:--memory-init-file 1"
     )
