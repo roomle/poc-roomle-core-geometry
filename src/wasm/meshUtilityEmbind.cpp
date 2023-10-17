@@ -190,6 +190,15 @@ namespace
 
    roomle::mesh::MeshDataInstance meshCSG(emscripten::val mesh0, emscripten::val mesh1, roomle::mesh::Operator meshOperator)
     {
+        std::cout << "meshCSG - before try" << std::endl;
+        try {
+            std::cout << "try" << std::endl;
+            throw 1;
+        } catch (...) {
+            std::cout << "catch" << std::endl;
+        }
+        std::cout << "meshCSG - after catch" << std::endl;
+        
         emscripten::val heapMemory = emscripten::val::module_property("HEAPU8")["buffer"];
         if (heapMemory.isUndefined()) {
             roomle::mesh::MeshDataInstance result;
