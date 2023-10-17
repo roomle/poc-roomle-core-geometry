@@ -1,5 +1,6 @@
 .vscode
 .idea
 cmake-build*
-buildWASM
-node_modules
+/build
+/buildWASM
+/node_modules

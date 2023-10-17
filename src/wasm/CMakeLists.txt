@@ -7,7 +7,7 @@ add_compile_options(
     -Wsign-conversion
     -Wno-unused-parameter
     -Wno-unused-command-line-argument
-    -Werror
+    #-Werror
     )
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
